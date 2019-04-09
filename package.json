@@ -1,0 +1,25 @@
+{
+  "name": "remote-protocol-stream",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/secure-local-node/remote-protocol-stream.git"
+  },
+  "keywords": [
+    "rpc",
+    "protocol",
+    "buffer",
+    "stream"
+  ],
+  "author": "Eric Jiang <ejiang9@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/secure-local-node/remote-protocol-stream/issues"
+  },
+  "homepage": "https://github.com/secure-local-node/remote-protocol-stream#readme"
+}
