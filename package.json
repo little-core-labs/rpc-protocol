@@ -21,5 +21,15 @@
   "bugs": {
     "url": "https://github.com/secure-local-node/remote-protocol-stream/issues"
   },
-  "homepage": "https://github.com/secure-local-node/remote-protocol-stream#readme"
+  "homepage": "https://github.com/secure-local-node/remote-protocol-stream#readme",
+  "dependencies": {
+    "protocol-buffers-encodings": "^1.1.0",
+    "readable-stream": "^3.3.0",
+    "varint": "^5.0.0"
+  },
+  "devDependencies": {
+    "simple-websocket": "^7.2.0",
+    "tape": "^4.10.1",
+    "through2": "^3.0.1"
+  }
 }

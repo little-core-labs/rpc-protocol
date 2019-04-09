@@ -1,0 +1,20 @@
+// type=0x1
+message Command {
+  bytes id = 1;
+  string name = 2;
+  repeated bytes arguments = 3;
+}
+
+// type=0xa
+message Response {
+  bytes id = 1;
+  string name = 2;
+  repeated bytes results = 3;
+  Error error = 10;
+}
+
+message Error {
+  string name = 1;
+  string code = 2;
+  string message = 3;
+}
