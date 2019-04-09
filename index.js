@@ -66,11 +66,9 @@ class Protocol extends Duplex {
 
   oncommand(command) {
     this.emit(`command:${command.name}`, command, (err, results) => {
-      if (!Array.isArray(results)) {
+      if (results && !Array.isArray(results)) {
         results = [ results ]
       }
-
-      err = err || {}
 
       const response = {
         id: command.id,
@@ -78,7 +76,8 @@ class Protocol extends Duplex {
       }
 
       let error
-      if (err || !response.results) {
+      if (err || !results) {
+        err = err || {}
         response.error = {
           name: err.name || 'UnknownError',
           code: err.code || '0',
