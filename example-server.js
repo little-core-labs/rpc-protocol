@@ -8,7 +8,7 @@ server.on('connection', (socket) => {
 
   bob.command('hey joe!', (command, reply) => {
     console.log('got command', command.name, unserialize(command.arguments))
-    reply([ 'result', 1000 ])
+    reply(null, [ 'result', 1000 ])
   })
 
   bob.command('yo', (command, reply) => {

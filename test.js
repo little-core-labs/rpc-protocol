@@ -41,14 +41,14 @@ test('protocol response', (t) => {
   })
 
   const args1 = [ 'argument1' ]
-  const args2 = [' argument1', 'argument2' ]
+  const args2 = [' argument1', 2, { property: 3 } ]
 
-  alice.call(cmd, args1, (res) => {
-    t.ok(equals(args1, unserialize(res.results)), 'onresponse1') // 3
+  alice.call(cmd, args1, (err, res) => {
+    t.ok(equals(args1, unserialize(res)), 'onresponse1') // 3
   })
 
-  alice.call(cmd, args2, (res) => {
-    t.ok(equals(args2, unserialize(res.results)), 'onresponse2') // 4
+  alice.call(cmd, args2, (err, res) => {
+    t.ok(equals(args2, unserialize(res)), 'onresponse2') // 4
   })
 })
 
@@ -90,15 +90,15 @@ test('protocol error', (t) => {
     }
   })
 
-  alice.call(cmd, [ ], (res) => {
-    t.equal(res.error.name, 'error1', 'onresponse1') // 4
+  alice.call(cmd, [ ], (err, res) => {
+    t.equal(err.name, 'error1', 'onresponse1') // 4
   })
 
-  alice.call(cmd, [ 'argument1' ], (res) => {
-    t.equal(res.error.name, 'error2', 'onresponse2') // 5
+  alice.call(cmd, [ 'argument1' ], (err, res) => {
+    t.equal(err.name, 'error2', 'onresponse2') // 5
   })
 
-  alice.call(cmd, [ 'argument1', 'argument2', 'argument3' ], (res) => {
-    t.equal(res.error.name, 'UnknownError', 'onresponse3') // 6
+  alice.call(cmd, [ 'argument1', 'argument2', 'argument3' ], (err, res) => {
+    t.equal(err.name, 'UnknownError', 'onresponse3') // 6
   })
 })

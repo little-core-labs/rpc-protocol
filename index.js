@@ -78,11 +78,6 @@ class Protocol extends Duplex {
 
   oncommand(command) {
     this.emit(`command:${command.name}`, command, (err, results) => {
-      if (Array.isArray(err)) {
-        results = err
-        err = null
-      }
-
       if (results && !Array.isArray(results)) {
         results = [ results ]
       }
@@ -120,7 +115,7 @@ class Protocol extends Duplex {
 
   onresponse(response) {
     const { callback } = this.pending[response.id.toString('hex')]
-    callback(response)
+    callback(response.error, response.results)
   }
 }
 
