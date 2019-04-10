@@ -1,3 +1,4 @@
+const { serialize, unserialize } = require('./serialization')
 const { Duplex } = require('readable-stream')
 const messages = require('./messages')
 const crypto = require('crypto')
@@ -37,7 +38,7 @@ class Protocol extends Duplex {
     const command = {
       id: crypto.randomBytes(32),
       name,
-      arguments: args.map(a => Buffer.from(a)),
+      arguments: serialize(args),
       callback: cb
     }
 
@@ -77,6 +78,11 @@ class Protocol extends Duplex {
 
   oncommand(command) {
     this.emit(`command:${command.name}`, command, (err, results) => {
+      if (Array.isArray(err)) {
+        results = err
+        err = null
+      }
+
       if (results && !Array.isArray(results)) {
         results = [ results ]
       }
@@ -95,7 +101,7 @@ class Protocol extends Duplex {
           message: err.message || 'An unknown error occurred.'
         }
       } else {
-        response.results = results.map(r => Buffer.from(r))
+        response.results = serialize(results)
       }
 
       const body = messages.Response.encode(response)
@@ -114,10 +120,12 @@ class Protocol extends Duplex {
 
   onresponse(response) {
     const { callback } = this.pending[response.id.toString('hex')]
-    callback(response.error ? response.error : response.results)
+    callback(response)
   }
 }
 
 module.exports = {
-  Protocol
+  Protocol,
+  serialize,
+  unserialize
 }

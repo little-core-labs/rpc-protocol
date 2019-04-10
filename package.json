@@ -29,6 +29,7 @@
     "varint": "^5.0.0"
   },
   "devDependencies": {
+    "deep-equal": "^1.0.1",
     "simple-websocket": "^7.2.0",
     "tape": "^4.10.1",
     "through2": "^3.0.1"
