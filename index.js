@@ -2,11 +2,22 @@ const { Duplex } = require('readable-stream')
 const messages = require('./messages')
 const crypto = require('crypto')
 const varint = require('varint')
+const pump = require('pump')
 
 class Protocol extends Duplex {
   constructor(opts) {
     super()
+    if ('function' !== typeof opts.connect) {
+      throw new TypeError('Connection expects a opts.connect(...) factory')
+    }
+
     this.pending = {}
+    this.createConnection = opts.connect
+
+    const wire = this.createConnection(this)
+    if (wire) {
+      pump(wire, this, wire)
+    }
   }
 
   _read(size) {
