@@ -10,7 +10,7 @@ socket.on('connect', () => {
     if (error) {
       console.log('got error', error)
     } else {
-      console.log('got response', unserialize(results))
+      console.log('got response', results)
     }
   })
 
@@ -18,7 +18,7 @@ socket.on('connect', () => {
     if (error) {
       console.log('got error', error)
     } else {
-      console.log('got response', unserialize(results))
+      console.log('got response', results)
     }
   })
 })

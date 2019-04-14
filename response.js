@@ -32,23 +32,21 @@ class Response {
     this.name = req.name
     this.error = toMaybeError(error)
     this.results = results
-
-    if (Array.isArray(this.results) && encoding) {
-      this.results = this.results.map((result) => encoding.decode(result))
-    }
-  }
-
-  toBuffer() {
-    return messages.Response.encode(this)
+    this.encoding = encoding
   }
 
   toJSON() {
+    const { encoding } = this
     return {
       id: this.id,
       name: this.name,
       error: this.error || null,
-      results: this.results || [],
+      results: this.results && this.results.map((result) => encoding.encode(result)),
     }
+  }
+
+  toBuffer() {
+    return messages.Response.encode(this.toJSON())
   }
 
   pack() {

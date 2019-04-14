@@ -29,16 +29,21 @@ class Command {
   constructor(encoding, name, args, callback) {
     this.id = Command.id()
     this.name = name
+    this.encoding = encoding
     this.callback = callback
     this.arguments = args
+  }
 
-    if (Array.isArray(this.arguments) && encoding) {
-      this.arguments = this.arguments.map((arg) => encoding.encode(arg))
+  toJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      arguments: this.arguments.map((arg) => this.encoding.encode(arg))
     }
   }
 
   toBuffer() {
-    return messages.Command.encode(this)
+    return messages.Command.encode(this.toJSON())
   }
 
   pack() {

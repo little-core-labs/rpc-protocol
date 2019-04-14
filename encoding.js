@@ -56,7 +56,11 @@ function decode(buffer, offset) {
     offset = 0
   }
 
-  const decoded = map(parse(buffer.slice(offset).toString('utf8')))
+  try {
+    return map(parse(buffer.slice(offset).toString('utf8')))
+  } catch (err) {
+    return map(buffer.slice(offset).toString('utf8'))
+  }
 
   return decoded
 

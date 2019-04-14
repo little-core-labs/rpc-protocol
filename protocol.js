@@ -249,6 +249,7 @@ class Protocol extends Duplex {
   }
 
   oncommand(command) {
+    this.emit('command', command)
     this.emit(`command:${command.name}`, command, (err, results) => {
       if (results && !Array.isArray(results)) {
         results = [ results ]
@@ -260,8 +261,8 @@ class Protocol extends Duplex {
     })
   }
 
-  onresponse(response) {
-    const id = response.id.toString('hex')
+  onresponse(res) {
+    const id = res.id.toString('hex')
     const request = this.pending.get(id)
     const { callback } = request
 
@@ -270,7 +271,8 @@ class Protocol extends Duplex {
     }
 
     if ('function' === typeof callback) {
-      callback(response.error, response.results)
+      const results = res.results && res.results.map((result) => encoding.decode(result))
+      callback(res.error, results)
     }
   }
 }
