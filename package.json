@@ -23,13 +23,17 @@
   },
   "homepage": "https://github.com/secure-local-node/remote-protocol-stream#readme",
   "dependencies": {
+    "jitson": "^1.0.0",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
     "readable-stream": "^3.3.0",
+    "regex-iso-date": "^1.0.0",
+    "serialize-error": "^4.1.0",
     "varint": "^5.0.0"
   },
   "devDependencies": {
     "deep-equal": "^1.0.1",
+    "protocol-buffers": "^4.1.0",
     "simple-websocket": "^7.2.0",
     "tape": "^4.10.1",
     "through2": "^3.0.1"

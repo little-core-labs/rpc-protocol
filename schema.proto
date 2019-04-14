@@ -11,10 +11,10 @@ message Response {
   string name = 2;
   repeated bytes results = 3;
   Error error = 10;
-}
 
-message Error {
-  string name = 1;
-  string code = 2;
-  string message = 3;
+  message Error {
+    string name = 1;
+    string code = 2;
+    string message = 3;
+  }
 }
