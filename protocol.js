@@ -23,7 +23,6 @@ class Protocol extends Duplex {
 
     this.setMaxListeners(0)
 
-    this.writeStreams = new Set()
     this.readStreams = new Set()
     this.extensions = new Map()
     this.encoding = opts.encoding || encoding
