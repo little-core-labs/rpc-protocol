@@ -34,7 +34,7 @@ function encode(value, buffer, offset) {
   function map(value) {
     if (Array.isArray(value)) {
       return value.map(map)
-  }
+    }
 
     value = serialize(value)
 
