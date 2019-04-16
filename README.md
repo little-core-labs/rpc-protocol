@@ -1,1 +1,1 @@
-# remote-protocol-stream
+# remote-procedure-protocol-stream
