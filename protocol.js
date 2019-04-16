@@ -271,8 +271,7 @@ class Protocol extends Duplex {
     }
 
     if ('function' === typeof callback) {
-      const results = res.results && res.results.map((result) => encoding.decode(result))
-      callback(res.error, results)
+      callback(res.error, res.results)
     }
   }
 }

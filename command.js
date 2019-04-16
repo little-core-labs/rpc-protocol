@@ -1,3 +1,4 @@
+const defaultEncoding = require('./encoding')
 const { unpack } = require('./unpack')
 const messages = require('./messages')
 const { pack } = require('./pack')
@@ -20,10 +21,16 @@ class Command {
       throw new TypeError('Invalid wire type for Command')
     }
 
-    const dec = messages.Command.decode(unpack(buffer))
-    return Object.assign(new Command(encoding, dec.name, dec.arguments), {
-      id: dec.id
-    })
+    encoding = encoding || defaultEncoding
+    const decoded = messages.Command.decode(unpack(buffer))
+    const name = decoded.name
+    const args = decoded.arguments
+    const cmd = new Command(encoding, name, args.map(decode))
+    cmd.id = decoded.id
+    return cmd
+    function decode(arg) {
+      return encoding.decode(arg)
+    }
   }
 
   constructor(encoding, name, args, callback) {

@@ -23,8 +23,14 @@ class Response {
       throw new TypeError('Invalid wire type for Response')
     }
 
-    const dec = messages.Response.decode(unpack(buffer))
-    return Object.assign(new Response(encoding, dec, dec.error, dec.results))
+    encoding = encoding || defaultEncoding
+    const decoded = messages.Response.decode(unpack(buffer))
+    const { results, error } = decoded
+    const response = new Response(encoding, decoded, error, results.map(decode))
+    return response
+    function decode(result) {
+      return encoding.decode(result)
+    }
   }
 
   constructor(encoding, req, error, results) {
