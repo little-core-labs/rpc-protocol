@@ -77,7 +77,10 @@ rpc.command('fetch', async (req) => {
   const [ resource, init ] = req.arguments
   return fetch(resource, init).then(async (res) => {
     return {
-      arrayBuffer: Buffer.from(await res.arrayBuffer),
+      arrayBuffer: Buffer.from(await res.clone().arrayBuffer),
+      text: Buffer.from(await res.clone().text),
+      json: Buffer.from(await res.clone().json),
+
       statusText: res.statusText,
       redirected: res.redirected,
       bodyUsed: res.bodyUsed,
