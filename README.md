@@ -1,6 +1,8 @@
 rpc-protocol
 ============
 
+Create and run commands over a RPC protocol stream
+
 ## Installation
 
 ```sh
