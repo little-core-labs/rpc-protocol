@@ -46,8 +46,12 @@ class Protocol extends Duplex {
   }
 
   _write(chunk, enc, done) {
-    this.onmessage(chunk)
-    done(null, chunk)
+    try {
+      this.onmessage(chunk)
+      done(null, chunk)
+    } catch (err) {
+      done(err)
+    }
   }
 
   send(id, request, buffer, callback) {
