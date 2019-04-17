@@ -2,6 +2,17 @@ const serializeError = require('serialize-error')
 const dateRegex = require('regex-iso-date')()
 
 function serialize(value) {
+  if (null === value) {
+    return null
+  }
+
+  switch (typeof value) {
+    case 'boolean':
+    case 'string':
+    case 'number':
+      return value
+  }
+
   if (Array.isArray(value)) {
     return value.map(serialize)
   }
@@ -10,14 +21,24 @@ function serialize(value) {
     return serializeError(value)
   }
 
-  if (value instanceof Set) {
-    return Array.from(value)
+  if (
+    'object' === typeof value && (
+      value instanceof Set ||
+      'function' === typeof value[Symbol.iterator]
+    )
+  ) {
+    return serialize(Array.from(value))
   }
 
-  if (value instanceof Map) {
-    return Array.from(value.entries()).reduce((o, kv) => Object.assign({
-      [kv[0]]: kv[1]
-    }), {})
+  if (
+    value instanceof Map || (
+      'object' === typeof value &&
+      'function' === typeof value.entries
+    )
+  ) {
+    const entries = Array.from(value.entries())
+    const reduce = (o, kv) => Object.assign({ [kv[0]]: kv[1] })
+    return serialize(entries.reduce(reduce, {}))
   }
 
   if ('function' === typeof value) {
@@ -27,7 +48,24 @@ function serialize(value) {
       }
     }
 
-    return String(new Function(`return ${value.toString()}`))
+    try {
+      const source = `return ${value.toString()}`
+      return String(new Function(source))
+    } catch (err) {
+      return null
+    }
+  }
+
+  try {
+    if ('object' === typeof value) {
+      const copy = value
+      value = {}
+      for (const k in copy) {
+        value[k] = serialize(copy[k])
+      }
+    }
+  } catch (err) {
+    return null
   }
 
   return value
@@ -55,7 +93,7 @@ function deserialize(value) {
       return null
     }
 
-    if (dateRegex.test(value)) {
+    if ((24 === value.length || 27 === value.length) && dateRegex.test(value)) {
       return new Date(Date.parse(value))
     }
 

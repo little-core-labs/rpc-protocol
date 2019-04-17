@@ -1,14 +1,14 @@
 {
-  "name": "remote-procedure-protocol-stream",
+  "name": "rpc-protocol",
   "version": "0.0.1",
-  "description": "",
+  "description": "Create and run commands over a RPC protocol stream",
   "main": "index.js",
   "scripts": {
     "test": "tape test.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/secure-local-node/remote-procedure-protocol-stream.git"
+    "url": "git+https://github.com/secure-local-node/rpc-protocol.git"
   },
   "keywords": [
     "rpc",
@@ -17,16 +17,19 @@
     "stream"
   ],
   "author": "Eric Jiang <ejiang9@gmail.com>",
+  "contributors": [
+    "Joseph Werle <joseph.werle@gmail.com>"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/secure-local-node/remote-procedure-protocol-stream/issues"
+    "url": "https://github.com/secure-local-node/rpc-protocol/issues"
   },
-  "homepage": "https://github.com/secure-local-node/remote-procedure-protocol-stream#readme",
+  "homepage": "https://github.com/secure-local-node/rpc-protocol#readme",
   "dependencies": {
     "jitson": "^1.0.0",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
-    "readable-stream": "^3.3.0",
+    "readable": "^3.3.0",
     "regex-iso-date": "^1.0.0",
     "serialize-error": "^4.1.0",
     "varint": "^5.0.0"

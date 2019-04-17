@@ -1,5 +1,6 @@
 const { Protocol, unserialize } = require('./')
 const Socket = require('simple-websocket')
+const pbs = require('protocol-buffers')
 
 const socket = new Socket('ws://localhost:3000')
 

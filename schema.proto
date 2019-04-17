@@ -1,16 +1,24 @@
-// type=0x1
+// type=0x01
 message Command {
   bytes id = 1;
   string name = 2;
   repeated bytes arguments = 3;
+  bytes nonce = 11;
 }
 
-// type=0xa
+// type=0x05
+message Fin {
+  bytes id = 1;
+  bytes nonce = 11;
+}
+
+// type=0x0A
 message Response {
   bytes id = 1;
   string name = 2;
   repeated bytes results = 3;
   Error error = 10;
+  bytes nonce = 11;
 
   message Error {
     string name = 1;

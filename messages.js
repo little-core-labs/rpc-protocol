@@ -17,6 +17,13 @@ var Command = exports.Command = {
   decode: null
 }
 
+var Fin = exports.Fin = {
+  buffer: true,
+  encodingLength: null,
+  encode: null,
+  decode: null
+}
+
 var Response = exports.Response = {
   buffer: true,
   encodingLength: null,
@@ -25,6 +32,7 @@ var Response = exports.Response = {
 }
 
 defineCommand()
+defineFin()
 defineResponse()
 
 function defineCommand () {
@@ -54,6 +62,10 @@ function defineCommand () {
         length += 1 + len
       }
     }
+    if (defined(obj.nonce)) {
+      var len = enc[0].encodingLength(obj.nonce)
+      length += 1 + len
+    }
     return length
   }
 
@@ -79,6 +91,11 @@ function defineCommand () {
         offset += enc[0].encode.bytes
       }
     }
+    if (defined(obj.nonce)) {
+      buf[offset++] = 90
+      enc[0].encode(obj.nonce, buf, offset)
+      offset += enc[0].encode.bytes
+    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -91,7 +108,8 @@ function defineCommand () {
     var obj = {
       id: null,
       name: "",
-      arguments: []
+      arguments: [],
+      nonce: null
     }
     while (true) {
       if (end <= offset) {
@@ -112,6 +130,83 @@ function defineCommand () {
         break
         case 3:
         obj.arguments.push(enc[0].decode(buf, offset))
+        offset += enc[0].decode.bytes
+        break
+        case 11:
+        obj.nonce = enc[0].decode(buf, offset)
+        offset += enc[0].decode.bytes
+        break
+        default:
+        offset = skip(prefix & 7, buf, offset)
+      }
+    }
+  }
+}
+
+function defineFin () {
+  var enc = [
+    encodings.bytes
+  ]
+
+  Fin.encodingLength = encodingLength
+  Fin.encode = encode
+  Fin.decode = decode
+
+  function encodingLength (obj) {
+    var length = 0
+    if (defined(obj.id)) {
+      var len = enc[0].encodingLength(obj.id)
+      length += 1 + len
+    }
+    if (defined(obj.nonce)) {
+      var len = enc[0].encodingLength(obj.nonce)
+      length += 1 + len
+    }
+    return length
+  }
+
+  function encode (obj, buf, offset) {
+    if (!offset) offset = 0
+    if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
+    var oldOffset = offset
+    if (defined(obj.id)) {
+      buf[offset++] = 10
+      enc[0].encode(obj.id, buf, offset)
+      offset += enc[0].encode.bytes
+    }
+    if (defined(obj.nonce)) {
+      buf[offset++] = 90
+      enc[0].encode(obj.nonce, buf, offset)
+      offset += enc[0].encode.bytes
+    }
+    encode.bytes = offset - oldOffset
+    return buf
+  }
+
+  function decode (buf, offset, end) {
+    if (!offset) offset = 0
+    if (!end) end = buf.length
+    if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
+    var oldOffset = offset
+    var obj = {
+      id: null,
+      nonce: null
+    }
+    while (true) {
+      if (end <= offset) {
+        decode.bytes = offset - oldOffset
+        return obj
+      }
+      var prefix = varint.decode(buf, offset)
+      offset += varint.decode.bytes
+      var tag = prefix >> 3
+      switch (tag) {
+        case 1:
+        obj.id = enc[0].decode(buf, offset)
+        offset += enc[0].decode.bytes
+        break
+        case 11:
+        obj.nonce = enc[0].decode(buf, offset)
         offset += enc[0].decode.bytes
         break
         default:
@@ -250,6 +345,10 @@ function defineResponse () {
       length += varint.encodingLength(len)
       length += 1 + len
     }
+    if (defined(obj.nonce)) {
+      var len = enc[0].encodingLength(obj.nonce)
+      length += 1 + len
+    }
     return length
   }
 
@@ -282,6 +381,11 @@ function defineResponse () {
       enc[2].encode(obj.error, buf, offset)
       offset += enc[2].encode.bytes
     }
+    if (defined(obj.nonce)) {
+      buf[offset++] = 90
+      enc[0].encode(obj.nonce, buf, offset)
+      offset += enc[0].encode.bytes
+    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -295,7 +399,8 @@ function defineResponse () {
       id: null,
       name: "",
       results: [],
-      error: null
+      error: null,
+      nonce: null
     }
     while (true) {
       if (end <= offset) {
@@ -323,6 +428,10 @@ function defineResponse () {
         offset += varint.decode.bytes
         obj.error = enc[2].decode(buf, offset, offset + len)
         offset += enc[2].decode.bytes
+        break
+        case 11:
+        obj.nonce = enc[0].decode(buf, offset)
+        offset += enc[0].decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)

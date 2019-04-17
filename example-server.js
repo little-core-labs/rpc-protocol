@@ -6,9 +6,9 @@ const server = new Server({ port: 3000 })
 server.on('connection', (socket) => {
   global.bob = new Protocol({ connect: () => socket })
 
-  bob.command('hey joe!', (command, reply) => {
+  bob.command('hey joe!', (command) => {
     console.log('got command', command)
-    reply(null, [ 'result', 1000 ])
+    return [ 'result', 1000 ]
   })
 
   bob.command('yo', (command, reply) => {

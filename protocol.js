@@ -1,18 +1,22 @@
 const { deserialize } = require('./serialization')
+const defaultEncoding = require('./encoding')
 const { Response } = require('./response')
 const { Command } = require('./command')
 const { Duplex } = require('readable-stream')
 const { unpack } = require('./unpack')
 const { pack } = require('./pack')
-const encoding = require('./encoding')
+const { Fin } = require('./fin')
 const through = require('through2')
 const varint = require('varint')
 const crypto = require('crypto')
 const pump = require('pump')
 
+const READ_STREAM_TIMEOUT = 1000
+
 class Protocol extends Duplex {
-  static get COMMAND() { return 0x1 }
-  static get RESPONSE() { return 0xa }
+  static get COMMAND() { return Command.WIRE_TYPE }
+  static get RESPONSE() { return Response.WIRE_TYPE }
+  static get FIN() { return Fin.WIRE_TYPE }
 
   constructor(opts) {
     if (!opts || 'object' !== typeof opts) {
@@ -25,11 +29,15 @@ class Protocol extends Duplex {
 
     this.readStreams = new Set()
     this.extensions = new Map()
-    this.encoding = opts.encoding || encoding
+    this.encoding = opts.encoding || defaultEncoding
     this.pending = new Map()
 
     if (opts && 'function' === typeof opts.connect) {
-      process.nextTick(() => pump(this, opts.connect(this), this))
+      process.nextTick(pump, this, opts.connect(this), this)
+    }
+
+    if (opts && opts.stream) {
+      process.nextTick(pump, this, opts.stream, this)
     }
   }
 
@@ -84,12 +92,22 @@ class Protocol extends Duplex {
     if ('function' === typeof request) {
       callback = request
       if (!this.pending.has(id) && !this.pending.has(id.toString('hex'))) {
-        buffer = id
+        buffer = Buffer.from(id)
         id = crypto.randomBytes(32)
       } else {
       }
 
       request = { id }
+
+      if ('function' === typeof callback) {
+        process.nextTick(()=> {
+          if (this.destroyed) {
+            callback(new Error('Destroyed'))
+          } else {
+            callback(null)
+          }
+        })
+      }
     }
 
     if ('function' === typeof callback) {
@@ -131,30 +149,89 @@ class Protocol extends Duplex {
       opts = {}
     }
 
+    if ('object' === typeof nameOrExtension) {
+      if (nameOrExtension.id) {
+        nameOrExtension = nameOrExtension.id
+      } else if (!Buffer.isBuffer(nameOrExtension)) {
+        throw new TypeError('Expecting a command ID or name, or an extension ID')
+      }
+    }
+
     const objectMode = false !== opts.objectMode && true !== opts.binary
     const stream = objectMode ? through.obj(opts) : through(opts)
     let closed = false
+    let timer = 0
+    let id = null
+
+    if (Buffer.isBuffer(nameOrExtension)) {
+      nameOrExtension = nameOrExtension.toString('hex')
+    }
 
     if ('string' === typeof nameOrExtension) {
-      if (this.pending.has(nameOrExtension)) {
-        stream.id = nameOrExtension
+      const command = this.pending.get(nameOrExtension)
+      if (command) {
+        id = stream.id = nameOrExtension
         this.readStreams.add(nameOrExtension)
+        const { callback } = command
+        command.callback = (err, res) => {
+          if (err) {
+            stream.emit('error', err)
+          } else if (!closed) {
+            for (const k of res) {
+              stream.push(k)
+            }
+          }
+
+          if ('function' === typeof callback) {
+            callback(err, res)
+          }
+        }
       } else {
         const command = this.call(nameOrExtension, onresponse)
-        const id = command.id.toString('hex')
-        stream.id = id
-        this.readStreams.add(id)
+        stream.id = command.id
+        this.readStreams.add(command.id.toString('hex'))
       }
     }
 
     if (nameOrExtension && 'number' === typeof nameOrExtension) {
-      const id = this.send(nameOrExtension, onresponse)
-      stream.id = id
+      id = stream.id = this.send(nameOrExtension, onresponse)
       this.readStreams.add(id)
     }
 
-    stream.once('close', () => { closed = true })
+    stream.once('close', onclose)
+    stream.once('end', onend)
+    stream.once('end', () => this.fin(id))
+
+    this.once('close', close)
+    this.once('end', close)
+
+    timeout()
+
     return stream
+
+    function timeout() {
+      clearTimeout(timer)
+      timer = setTimeout(ontimeout, opts.timeout || READ_STREAM_TIMEOUT)
+      stream.once('data', () => timeout())
+    }
+
+    function close() {
+      stream.end()
+      stream.destroy()
+    }
+
+    function ontimeout() {
+      close()
+    }
+
+    function onclose() {
+      clearTimeout(timer)
+      closed = true
+    }
+
+    function onend() {
+      clearTimeout(timer)
+    }
 
     function onresponse(err, res) {
       if (err) {
@@ -166,6 +243,11 @@ class Protocol extends Duplex {
   }
 
   call(name, args, cb) {
+    if ('function' === typeof args && !cb) {
+      cb = args
+      args = []
+    }
+
     if (!Array.isArray(args)) {
       args = [ args ]
     }
@@ -180,13 +262,58 @@ class Protocol extends Duplex {
   }
 
   command(name, cb) {
-    this.on(`command:${name}`, cb)
+    if ('string' === typeof name && 'function' === typeof cb) {
+      const event = `command:${hash(name)}`
+      this.removeAllListeners(event)
+      this.on(event, oncommand)
+      this.once('close', () => {
+        this.removeListener(event, oncommand)
+      })
+    }
+
+    if ('function' === typeof name) {
+      this.on('command', oncommand)
+    }
+
     return this
+
+    async function oncommand(cmd, reply) {
+      let responded = false
+      try {
+        const results = await cb(cmd, respond)
+        if (!responded && undefined !== results) {
+          respond(null, results)
+        }
+      } catch (err) {
+        respond(err)
+      }
+
+      function respond(err, results) {
+        responded = true
+        return reply(err, results)
+      }
+    }
   }
 
   extension(type, handler) {
     this.extensions.set(type, handler)
     return this
+  }
+
+  fin(id) {
+    if (id && 'object' === typeof id && id.id) {
+      id = id.id
+    }
+
+    if ('string' === typeof id) {
+      id = Buffer.from(id, 'hex')
+    }
+
+    this.push(new Fin(this.encoding, id).pack())
+  }
+
+  cancel(command) {
+    this.fin(command)
   }
 
   onmessage(buffer) {
@@ -198,6 +325,9 @@ class Protocol extends Duplex {
 
       case Protocol.RESPONSE:
         return this.onresponse(Response.from(buffer, this.encoding))
+
+      case Protocol.FIN:
+        return this.onfin(Fin.from(buffer, this.encoding))
     }
 
     if (this.extensions.has(type)) {
@@ -208,7 +338,16 @@ class Protocol extends Duplex {
       }
     }
 
-    throw new TypeError(`Invalid wire type: ${type}`)
+    this.emit('message', buffer)
+  }
+
+  onfin(fin) {
+    const id = fin.id.toString('hex')
+    if (this.pending.has(id)) {
+      const req = this.pending.get(id)
+      this.pending.delete(id)
+      this.emit('fin', id, req)
+    }
   }
 
   onextension(type, req, buffer) {
@@ -225,55 +364,89 @@ class Protocol extends Duplex {
         }
 
         return callback(err, err ? null : req)
+      } else {
+        this.pending.set(id, req)
       }
     }
 
-    this.emit('extension', req, type, buffer, (err, results) => {
+    const reply = (err, results) => {
       if (results && !Array.isArray(results)) {
         results = [ results ]
       }
 
       const { encode } = this.extensions.get(type)
+      const id = req.id.toString('hex')
 
-      if (err) {
-        this.push(pack(type, encode({ id: req.id, error: err })))
-      }
+      if (this.pending.has(id)) {
 
-      if (results) {
-        for (const result of results) {
-          result.id = result.id || req.id
-          this.push(pack(type, encode(result)))
+        if (err) {
+          this.push(pack(type, encode({ id: req.id, error: err })))
         }
+
+        if (results) {
+          for (const result of results) {
+            result.id = result.id || req.id
+            this.push(pack(type, encode(result)))
+          }
+        }
+        return true
       }
-    })
+
+      return false
+    }
+
+    this.emit('extension', req, type, buffer, reply)
   }
 
   oncommand(command) {
-    this.emit('command', command)
-    this.emit(`command:${command.name}`, command, (err, results) => {
-      if (results && !Array.isArray(results)) {
+    const id = command.id.toString('hex')
+    const reply = (err, results) => {
+      if (undefined !== results && !Array.isArray(results)) {
         results = [ results ]
       }
 
       const response = new Response(this.encoding, command, err, results)
       const buffer = response.pack()
-      process.nextTick(() => this.push(buffer))
-    })
+
+      if (this.pending.has(id)) {
+        process.nextTick(() => this.push(buffer))
+        return true
+      }
+
+      return false
+    }
+
+    this.pending.set(id, command)
+    this.emit('command', command, reply)
+    this.emit(`command:${hash(command.name)}`, command, reply)
   }
 
   onresponse(res) {
     const id = res.id.toString('hex')
     const request = this.pending.get(id)
-    const { callback } = request
+    if (request) {
+      const { callback } = request
 
-    if (!this.readStreams.has(id)) {
-      this.pending.delete(id)
-    }
+      if (!this.readStreams.has(id)) {
+        this.pending.delete(id)
+        process.nextTick(() => {
+          this.fin(res.id)
+        })
+      }
 
-    if ('function' === typeof callback) {
-      callback(res.error, res.results)
+      if ('function' === typeof callback) {
+        callback(res.error, res.results)
+      }
     }
   }
+}
+
+function hash(value) {
+  return crypto
+    .createHash('sha256')
+    .update(value)
+    .digest()
+    .toString('hex')
 }
 
 module.exports = {
