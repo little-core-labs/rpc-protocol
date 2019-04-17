@@ -1,6 +1,6 @@
 {
   "name": "rpc-protocol",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create and run commands over a RPC protocol stream",
   "main": "index.js",
   "scripts": {
