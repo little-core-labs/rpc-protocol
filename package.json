@@ -29,7 +29,7 @@
     "jitson": "^1.0.0",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
-    "readable": "^3.3.0",
+    "readable-stream": "^3.3.0",
     "regex-iso-date": "^1.0.0",
     "serialize-error": "^4.1.0",
     "varint": "^5.0.0"
