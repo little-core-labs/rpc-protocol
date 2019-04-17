@@ -42,11 +42,15 @@ function serialize(value) {
   }
 
   if ('function' === typeof value) {
-    if ('function' !== value.toString().slice(0, 8)) {
-      if ('(' !== value.toString()[0]) {
-        value = `function ${value}`
+    const original = value
+    const isAsync = value.toString().match(/^async\s+/)
+    let string = value.toString().replace(/^async\s+/, '')
+    if (!/^function/.test(string)) {
+      if ('(' !== string.toString()[0]) {
+        value = `${isAsync ? 'async ' : ''}function ${string}`
       }
     }
+
 
     try {
       const source = `return ${value.toString()}`
