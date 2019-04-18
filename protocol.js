@@ -183,7 +183,7 @@ class Protocol extends Duplex {
             stream.emit('error', err)
           } else if (!closed) {
             for (const k of res) {
-              stream.push(Buffer.from(k))
+              stream.push(k)
             }
           }
 
@@ -291,6 +291,21 @@ class Protocol extends Duplex {
             let reading = true
             results.on('data', (data) => { reading && (reading = respond(null, data)) })
             results.on('end', () => { reading && respond(null, null) })
+          } else if (
+            !Array.isArray(results) &&
+            'function' === typeof results[Symbol.iterator]
+          ) {
+            let pending = 0
+            for (const value of results) {
+              pending++
+              process.nextTick(() => {
+                if (respond(null, value)) {
+                  if (0 === --pending) {
+                    respond(null, null)
+                  }
+                }
+              })
+            }
           } else {
             respond(null, results)
           }
