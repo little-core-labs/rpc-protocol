@@ -12,6 +12,11 @@ server.on('connection', (socket) => {
     return fs.createReadStream('./package.json')
   })
 
+  bob.command('iterator', () => {
+    return new Set([1,2,3,4,5]).values()
+    //return new Set(['a','b','c']).values()
+  })
+
   bob.command('hey joe!', (command) => {
     console.log('got command', command)
     return [ 'result', 1000 ]

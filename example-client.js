@@ -26,4 +26,8 @@ socket.on('connect', () => {
   alice.createReadStream(alice.call('stream'))
     .on('data', (d) => console.log(d.toString()))
     .on('end', () => console.log('end'))
+
+  alice.createReadStream(alice.call('iterator'))
+    .on('data', (d) => console.log(d.toString()))
+    .on('end', () => console.log('end'))
 })
