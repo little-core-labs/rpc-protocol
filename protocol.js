@@ -292,6 +292,8 @@ class Protocol extends Duplex {
             results.on('data', (data) => { reading && (reading = respond(null, data)) })
             results.on('end', () => { reading && respond(null, null) })
           } else if (
+            results &&
+            'object' === typeof results &&
             !Array.isArray(results) &&
             'function' === typeof results[Symbol.iterator]
           ) {
