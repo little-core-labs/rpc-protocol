@@ -2,6 +2,9 @@ const { unpack } = require('./unpack')
 const messages = require('./messages')
 const { pack } = require('./pack')
 const varint = require('varint')
+const jitson = require('jitson')
+
+const parse = jitson()
 
 function toMaybeError(err) {
   if (!err) {
@@ -47,7 +50,11 @@ class Response {
       id: this.id,
       name: this.name,
       error: this.error || null,
-      results: this.results && this.results.map((result) => encoding.encode(result)),
+      results: this.results && this.results.map(encode),
+    }
+
+    function encode(result){
+      return  encoding.encode(parse(JSON.stringify(result)))
     }
   }
 
