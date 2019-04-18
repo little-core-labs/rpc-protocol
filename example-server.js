@@ -1,10 +1,16 @@
-const Server = require('simple-websocket/server')
 const { Protocol, unserialize } = require('./')
+const through = require('through2')
+const Server = require('simple-websocket/server')
+const fs= require('fs')
 
 const server = new Server({ port: 3000 })
 
 server.on('connection', (socket) => {
   global.bob = new Protocol({ connect: () => socket })
+
+  bob.command('stream', () => {
+    return fs.createReadStream('./package.json')
+  })
 
   bob.command('hey joe!', (command) => {
     console.log('got command', command)

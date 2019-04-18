@@ -4,6 +4,7 @@ const { Response } = require('./response')
 const { Command } = require('./command')
 const { Duplex } = require('readable-stream')
 const { unpack } = require('./unpack')
+const isStream = require('is-stream')
 const { pack } = require('./pack')
 const { Fin } = require('./fin')
 const through = require('through2')
@@ -182,7 +183,7 @@ class Protocol extends Duplex {
             stream.emit('error', err)
           } else if (!closed) {
             for (const k of res) {
-              stream.push(k)
+              stream.push(Buffer.from(k))
             }
           }
 
@@ -286,7 +287,13 @@ class Protocol extends Duplex {
       try {
         const results = await cb(cmd, respond)
         if (!responded && undefined !== results) {
-          respond(null, results)
+          if (isStream(results)) {
+            let reading = true
+            results.on('data', (data) => { reading && (reading = respond(null, data)) })
+            results.on('end', () => { reading && respond(null, null) })
+          } else {
+            respond(null, results)
+          }
         }
       } catch (err) {
         respond(err)

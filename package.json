@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/secure-local-node/rpc-protocol#readme",
   "dependencies": {
+    "is-stream": "^1.1.0",
     "jitson": "^1.0.0",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
