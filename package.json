@@ -33,13 +33,13 @@
     "readable-stream": "^3.3.0",
     "regex-iso-date": "^1.0.0",
     "serialize-error": "^4.1.0",
+    "through2": "^3.0.1",
     "varint": "^5.0.0"
   },
   "devDependencies": {
     "deep-equal": "^1.0.1",
     "protocol-buffers": "^4.1.0",
     "simple-websocket": "^7.2.0",
-    "tape": "^4.10.1",
-    "through2": "^3.0.1"
+    "tape": "^4.10.1"
   }
 }
