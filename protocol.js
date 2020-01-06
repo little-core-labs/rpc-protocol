@@ -34,11 +34,11 @@ class Protocol extends Duplex {
     this.pending = new Map()
 
     if (opts && 'function' === typeof opts.connect) {
-      process.nextTick(pump, this, opts.connect(this), this)
+      process.nextTick(pump, opts.connect(this), this, opts.connect(this))
     }
 
     if (opts && opts.stream) {
-      process.nextTick(pump, this, opts.stream, this)
+      process.nextTick(pump, opts.stream, this, opts.stream)
     }
   }
 
