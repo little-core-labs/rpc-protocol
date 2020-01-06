@@ -34,7 +34,8 @@ class Protocol extends Duplex {
     this.pending = new Map()
 
     if (opts && 'function' === typeof opts.connect) {
-      process.nextTick(pump, opts.connect(this), this, opts.connect(this))
+      const conn = opts.connect(this)
+      process.nextTick(pump, conn, this, conn)
     }
 
     if (opts && opts.stream) {
